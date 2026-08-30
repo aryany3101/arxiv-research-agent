@@ -1,0 +1,17 @@
+cat > .gitignore << 'EOF'
+venv/
+__pycache__/
+*.pyc
+.DS_Store
+
+# Large/generated data - don't commit these
+data/raw_pdfs/
+data/chroma_db/
+data/answer_cache.json
+
+# Keep these though - they're small and meaningful:
+# data/metadata.json
+# data/processed/chunks.jsonl
+# data/eval_questions.json
+# data/faithfulness_results.json
+EOF

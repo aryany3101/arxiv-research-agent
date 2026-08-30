@@ -1,0 +1,50 @@
+[
+  {
+    "question": "How do language models represent moral concepts internally?",
+    "expected_arxiv_ids": ["2608.27402v1"]
+  },
+  {
+    "question": "How can AI agents automatically discover and reuse skills from their past experience?",
+    "expected_arxiv_ids": ["2608.27454v1"]
+  },
+  {
+    "question": "What is red-teaming and how can an agent automate it using experience-driven skill evolution?",
+    "expected_arxiv_ids": ["2608.27439v1"]
+  },
+  {
+    "question": "How can clinical language models be made more robust against dataset-specific shortcuts like templates and formatting artifacts?",
+    "expected_arxiv_ids": ["2608.27397v1"]
+  },
+  {
+    "question": "How do video world models generalize across different robot embodiments?",
+    "expected_arxiv_ids": ["2608.27406v1"]
+  },
+  {
+    "question": "What architecture separates an LLM agent's persona from its execution to keep audited work traceable while allowing behavior to evolve?",
+    "expected_arxiv_ids": ["2608.27427v1"]
+  },
+  {
+    "question": "How is severity scored continuously for sepsis patients without needing hour-by-hour manual labels?",
+    "expected_arxiv_ids": ["2608.27421v1"]
+  },
+  {
+    "question": "What are the limitations of using F1 score to evaluate AI security scanners, and what should be measured instead?",
+    "expected_arxiv_ids": ["2608.27424v1"]
+  },
+  {
+    "question": "What is MCR-Bench and what does it benchmark?",
+    "expected_arxiv_ids": ["2608.27442v1"]
+  },
+  {
+    "question": "What does CLAP stand for and what problem does it solve?",
+    "expected_arxiv_ids": ["2608.27406v1"]
+  },
+  {
+    "question": "How does JEPA-based world modeling handle variable task complexity in vision transformers?",
+    "expected_arxiv_ids": ["2608.27367v1"]
+  },
+  {
+    "question": "What is CorporateBench used for?",
+    "expected_arxiv_ids": ["2608.27391v1"]
+  }
+]
