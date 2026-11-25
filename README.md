@@ -17,13 +17,15 @@ Unlike a basic RAG chatbot, this agent:
 
 ## Demo
 
-**Question:** *"What are LLMs and evals?"*
+**Question:** How do video world models generalize across different robot embodiments?
 
-The agent correctly identified and cited two different source papers for
-different parts of the compound question, and pulled specific model names
-mentioned in those papers' related-work sections — verified against the
-raw source chunks with `grep` to confirm no hallucination (see
-[Evaluation](#evaluation) below).
+**Excerpt from a saved run:**
+
+> By scaling data across heterogeneous human and robotic agents, the models learn generalizable physical priors.
+>
+> To accommodate disparately-sized operational spaces across platforms, absolute end-effector actions are normalized into uniform, finite bounds [...] using platform-unique normalization factors.
+
+Both statements cite [CLAP: Cross-Embodiment Video World Models are Zero-Shot Physical Simulators](https://arxiv.org/abs/2608.27406v1). The [saved run](data/faithfulness_results.json) contains the complete answer and the agent’s critique.
 
 ## Architecture
 
@@ -120,21 +122,34 @@ questions and questions targeting specific named systems/acronyms.
 
 ### Retrieval Evaluation
 
-| Method | Hit Rate (paper found in top-5) |
-|---|---|
-| Naive (semantic search only) | 12/12 (100%) |
-| Hybrid (BM25 + semantic + rerank) | 12/12 (100%) |
+The retrieval benchmark compares semantic-only search, BM25 + semantic fusion, and fusion with a cross-encoder reranker. Hit@1 and Hit@5 check whether any expected paper appears in the first one or five chunks. All@5 requires every expected paper in the first five chunks.
 
-**Honest finding:** at the current corpus size (15 papers on largely
-non-overlapping topics), there isn't enough topical overlap between
-papers to create real retrieval ambiguity — even naive semantic search
-finds the right paper every time. This means the current eval set doesn't
-yet demonstrate hybrid search's advantage, which typically shows up when
-multiple similar-but-distinct papers compete for relevance. **Next step:**
-scale the corpus to 100-300 papers within the same narrow subfields, which
-should surface real cases where hybrid search and reranking outperform
-naive retrieval — documented here as a known limitation rather than
-glossed over.
+With the checked-in corpus of 15 papers, all three methods found the expected paper at rank one for all 12 original questions.
+
+```bash
+python src/embed_chunks.py
+python src/eval_retrieval.py
+```
+
+#### Focused RAG benchmark
+
+The [benchmark manifest](data/rag_benchmark.json) pins eight closely related arXiv papers and twelve questions, including four that require two sources. This benchmark downloads the papers to build its own index from scratch. The embedding and reranking models download on first use. Neither retrieval benchmark calls Gemini.
+
+```bash
+export ARXIV_DATA_DIR="$(mktemp -d)"
+python src/prepare_rag_benchmark.py "$ARXIV_DATA_DIR"
+python src/embed_chunks.py
+python src/eval_retrieval.py --questions data/rag_benchmark.json
+unset ARXIV_DATA_DIR
+```
+
+| Method | Hit@1 | Hit@5 | All@5 |
+| --- | ---: | ---: | ---: |
+| Semantic only | 10/12 | 10/12 | 9/12 |
+| Hybrid fusion | 11/12 | 11/12 | 9/12 |
+| Hybrid + rerank | 10/12 | 11/12 | 10/12 |
+
+Reranking brought [Active Retrieval Augmented Generation](https://arxiv.org/abs/2305.06983v1) into the top five alongside [Self-RAG](https://arxiv.org/abs/2310.11511v1) for the question comparing their retrieval triggers. It also dropped a relevant first-place result to third for the ColBERT comparison. All three methods missed [ColBERTv2](https://arxiv.org/abs/2112.10752v2) when asked which successor uses residual compression. Their top five were all chunks from the original ColBERT paper for that question.
 
 ### Faithfulness Evaluation
 
@@ -158,8 +173,7 @@ in principle share blind spots with the LLM that wrote the answer.
 
 ## Known Limitations
 
-- **Corpus size:** at 15 papers, the retrieval evaluation can't yet
-  distinguish hybrid search from naive semantic search — see above.
+- **Corpus size:** both retrieval suites use small corpora and hand-written questions. Their results describe these fixtures and need a larger, independently labeled corpus to generalize.
 - **Self-critique blind spots:** the critique step uses the same class of
   model as the answer generator; a manual spot-check caught nothing wrong
   in this case, but the critique step alone shouldn't be treated as a
@@ -170,8 +184,7 @@ in principle share blind spots with the LLM that wrote the answer.
 
 ## Roadmap / Next Steps
 
-- [ ] Scale corpus to 100-300 papers to properly stress-test hybrid
-      retrieval's advantage over naive search
+- [ ] Scale the benchmark to 100–300 papers and broaden the question set
 - [ ] Run full 12-question faithfulness eval (currently 5/12 run due to
       API quota constraints)
 - [ ] Dockerize and deploy to HuggingFace Spaces / Railway

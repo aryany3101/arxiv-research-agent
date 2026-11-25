@@ -1,0 +1,26 @@
+{
+  "papers": {
+    "2005.11401v4": "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks",
+    "2004.04906v3": "Dense Passage Retrieval for Open-Domain Question Answering",
+    "2004.12832v2": "ColBERT: Efficient and Effective Passage Search via Contextualized Late Interaction over BERT",
+    "2112.10752v2": "ColBERTv2: Effective and Efficient Retrieval via Lightweight Late Interaction",
+    "2212.10496v1": "Precise Zero-Shot Dense Retrieval without Relevance Labels",
+    "2310.11511v1": "Self-RAG: Learning to Retrieve, Generate, and Critique through Self-Reflection",
+    "2401.15884v1": "Corrective Retrieval Augmented Generation",
+    "2305.06983v1": "Active Retrieval Augmented Generation"
+  },
+  "questions": [
+    {"question": "Which model compares conditioning a full generated response on one document with allowing different documents for each output token?", "expected_arxiv_ids": ["2005.11401v4"]},
+    {"question": "Which passage retriever trains a dual encoder using question–passage pairs and hard negatives from BM25?", "expected_arxiv_ids": ["2004.04906v3"]},
+    {"question": "Which original late-interaction retriever sums token-level MaxSim scores between query and document embeddings?", "expected_arxiv_ids": ["2004.12832v2"]},
+    {"question": "Which follow-up to late-interaction passage search compresses document token embeddings with residual compression?", "expected_arxiv_ids": ["2112.10752v2"]},
+    {"question": "Which zero-shot retrieval method embeds a generated hypothetical document and uses it to find actual passages?", "expected_arxiv_ids": ["2212.10496v1"]},
+    {"question": "Which system learns reflection tokens to decide when to retrieve and to critique generation?", "expected_arxiv_ids": ["2310.11511v1"]},
+    {"question": "Which method evaluates retrieval quality before using web search as a fallback for poor evidence?", "expected_arxiv_ids": ["2401.15884v1"]},
+    {"question": "Which method predicts an upcoming sentence, then triggers retrieval when tokens in it have low confidence?", "expected_arxiv_ids": ["2305.06983v1"]},
+    {"question": "Compare the original token-level MaxSim retriever with the successor that reduces its index size through residual compression.", "expected_arxiv_ids": ["2004.12832v2", "2112.10752v2"]},
+    {"question": "Compare training with labeled question–passage pairs against zero-shot dense search driven by a generated hypothetical document.", "expected_arxiv_ids": ["2004.04906v3", "2212.10496v1"]},
+    {"question": "Compare deciding when to retrieve using learned reflection tokens with using low-confidence tokens in a predicted next sentence.", "expected_arxiv_ids": ["2310.11511v1", "2305.06983v1"]},
+    {"question": "Compare the model that marginalizes over retrieved documents during sequence generation with the system that assesses retrieved evidence and falls back to web search.", "expected_arxiv_ids": ["2005.11401v4", "2401.15884v1"]}
+  ]
+}

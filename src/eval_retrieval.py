@@ -1,72 +1,69 @@
+import argparse
 import json
-import sys
 from pathlib import Path
 
-sys.path.append(".")
-from retrieve import semantic_search, keyword_search, reciprocal_rank_fusion, rerank, chunks_by_id
+from retrieve import (
+    chunks_by_id,
+    keyword_search,
+    reciprocal_rank_fusion,
+    rerank,
+    semantic_search,
+)
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 EVAL_PATH = DATA_DIR / "eval_questions.json"
+METHODS = ("Semantic only", "Hybrid fusion", "Hybrid + rerank")
 
 
-def retrieve_top_papers(query, top_k=5):
-    """Run the full hybrid + rerank pipeline and return the set of
-    arxiv_ids present in the top_k results (not chunk ids)."""
-    sem_ids = semantic_search(query, k=10)
-    kw_ids = keyword_search(query, k=10)
-    fused = reciprocal_rank_fusion(sem_ids, kw_ids)
-    top_chunks = rerank(query, fused, chunks_by_id, top_k=top_k)
-
-    arxiv_ids = []
-    for doc_id, score in top_chunks:
-        arxiv_id = chunks_by_id[doc_id]["arxiv_id"]
-        if arxiv_id not in arxiv_ids:
-            arxiv_ids.append(arxiv_id)
-    return arxiv_ids
-
-def retrieve_top_papers_naive(query, top_k=5):
-    """Baseline: semantic search only, no BM25, no reranking."""
-    sem_ids = semantic_search(query, k=top_k)
-    arxiv_ids = []
-    for doc_id in sem_ids:
-        arxiv_id = chunks_by_id[doc_id]["arxiv_id"]
-        if arxiv_id not in arxiv_ids:
-            arxiv_ids.append(arxiv_id)
-    return arxiv_ids
+def paper_ids(chunk_ids):
+    return [chunks_by_id[doc_id]["arxiv_id"] for doc_id in chunk_ids]
 
 
-def evaluate():
-    with open(EVAL_PATH) as f:
-        eval_set = json.load(f)
+def evaluate(eval_path):
+    questions = json.loads(eval_path.read_text())
+    if isinstance(questions, dict):
+        questions = questions["questions"]
+    if not questions:
+        raise ValueError(f"No evaluation questions in {eval_path}")
 
-    total = len(eval_set)
-    hybrid_hits = 0
-    naive_hits = 0
-
-    for item in eval_set:
+    counts = {method: {1: 0, 5: 0, "full": 0} for method in METHODS}
+    for item in questions:
         question = item["question"]
         expected = set(item["expected_arxiv_ids"])
+        semantic = semantic_search(question, k=10)
+        fused = reciprocal_rank_fusion(semantic, keyword_search(question, k=10))
+        reranked = rerank(question, fused, chunks_by_id, top_k=5)
+        rankings = {
+            "Semantic only": paper_ids(semantic[:5]),
+            "Hybrid fusion": paper_ids(doc_id for doc_id, _ in fused[:5]),
+            "Hybrid + rerank": paper_ids(doc_id for doc_id, _ in reranked),
+        }
 
-        hybrid_retrieved = set(retrieve_top_papers(question, top_k=5))
-        naive_retrieved = set(retrieve_top_papers_naive(question, top_k=5))
+        hits = {
+            method: {
+                1: bool(expected.intersection(ids[:1])),
+                5: bool(expected.intersection(ids[:5])),
+                "full": expected.issubset(ids[:5]),
+            }
+            for method, ids in rankings.items()
+        }
+        for method, scores in hits.items():
+            for k, hit in scores.items():
+                counts[method][k] += hit
 
-        hybrid_hit = len(expected & hybrid_retrieved) > 0
-        naive_hit = len(expected & naive_retrieved) > 0
+        if not all(scores[1] and scores["full"] for scores in hits.values()):
+            print(f"\n{question}\n  Expected: {', '.join(sorted(expected))}")
+            for method, ids in rankings.items():
+                print(f"  {method}: {', '.join(ids)}")
 
-        if hybrid_hit:
-            hybrid_hits += 1
-        if naive_hit:
-            naive_hits += 1
-
-        if hybrid_hit != naive_hit:
-            print(f"[DIFFERS] {question}")
-            print(f"    naive: {naive_retrieved} ({'hit' if naive_hit else 'miss'})")
-            print(f"    hybrid: {hybrid_retrieved} ({'hit' if hybrid_hit else 'miss'})\n")
-
-    print(f"\n=== Summary ===")
-    print(f"Naive (semantic-only) hit rate:  {naive_hits}/{total} ({naive_hits/total*100:.1f}%)")
-    print(f"Hybrid+rerank hit rate:          {hybrid_hits}/{total} ({hybrid_hits/total*100:.1f}%)")
+    total = len(questions)
+    print(f"\n{'Method':<18} {'Hit@1':>8} {'Hit@5':>8} {'All@5':>8}")
+    for method, scores in counts.items():
+        fractions = [f"{scores[metric]}/{total}" for metric in (1, 5, "full")]
+        print(f"{method:<18}" + "".join(f" {score:>8}" for score in fractions))
 
 
 if __name__ == "__main__":
-    evaluate()
+    parser = argparse.ArgumentParser(description="Compare three retrieval configurations.")
+    parser.add_argument("--questions", type=Path, default=EVAL_PATH)
+    evaluate(parser.parse_args().questions)

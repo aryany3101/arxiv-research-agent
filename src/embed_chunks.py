@@ -1,9 +1,11 @@
 import json
+import os
 import chromadb
 from pathlib import Path
 from sentence_transformers import SentenceTransformer
 
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+DEFAULT_DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+DATA_DIR = Path(os.environ.get("ARXIV_DATA_DIR", DEFAULT_DATA_DIR))
 CHUNKS_PATH = DATA_DIR / "processed" / "chunks.jsonl"
 CHROMA_DIR = DATA_DIR / "chroma_db"
 
