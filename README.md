@@ -17,6 +17,8 @@ Unlike a basic RAG chatbot, this agent:
 
 ## Demo
 
+**[Open the keyless demo](https://aryany3101.github.io/arxiv-research-agent/)** to browse three saved answers with citations and inspect a retrieval miss.
+
 **Question:** How do video world models generalize across different robot embodiments?
 
 **Excerpt from a saved run:**
@@ -150,6 +152,8 @@ unset ARXIV_DATA_DIR
 | Hybrid + rerank | 10/12 | 11/12 | 10/12 |
 
 Reranking brought [Active Retrieval Augmented Generation](https://arxiv.org/abs/2305.06983v1) into the top five alongside [Self-RAG](https://arxiv.org/abs/2310.11511v1) for the question comparing their retrieval triggers. It also dropped a relevant first-place result to third for the ColBERT comparison. All three methods missed [ColBERTv2](https://arxiv.org/abs/2112.10752v2) when asked which successor uses residual compression. Their top five were all chunks from the original ColBERT paper for that question.
+
+**[ColBERTv2 case study](docs/colbertv2-case-study.md)** · Capping repeat chunks increased diversity, but the expected paper still missed the top five. The case study traces its rank through BM25, fusion, and reranking.
 
 ### Faithfulness Evaluation
 

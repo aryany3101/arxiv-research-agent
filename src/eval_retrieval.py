@@ -1,5 +1,6 @@
 import argparse
 import json
+from collections import Counter
 from pathlib import Path
 
 from retrieve import (
@@ -15,11 +16,21 @@ EVAL_PATH = DATA_DIR / "eval_questions.json"
 METHODS = ("Semantic only", "Hybrid fusion", "Hybrid + rerank")
 
 
-def paper_ids(chunk_ids):
-    return [chunks_by_id[doc_id]["arxiv_id"] for doc_id in chunk_ids]
+def top_paper_ids(chunk_ids, max_chunks_per_paper=None):
+    paper_counts = Counter()
+    selected = []
+    for doc_id in chunk_ids:
+        paper_id = chunks_by_id[doc_id]["arxiv_id"]
+        if max_chunks_per_paper is not None and paper_counts[paper_id] >= max_chunks_per_paper:
+            continue
+        selected.append(paper_id)
+        paper_counts[paper_id] += 1
+        if len(selected) == 5:
+            break
+    return selected
 
 
-def evaluate(eval_path):
+def evaluate(eval_path, candidate_limit=10, max_chunks_per_paper=None, show_rankings=False):
     questions = json.loads(eval_path.read_text())
     if isinstance(questions, dict):
         questions = questions["questions"]
@@ -30,13 +41,14 @@ def evaluate(eval_path):
     for item in questions:
         question = item["question"]
         expected = set(item["expected_arxiv_ids"])
-        semantic = semantic_search(question, k=10)
-        fused = reciprocal_rank_fusion(semantic, keyword_search(question, k=10))
-        reranked = rerank(question, fused, chunks_by_id, top_k=5)
+        semantic = semantic_search(question, k=candidate_limit)
+        fused = reciprocal_rank_fusion(semantic, keyword_search(question, k=candidate_limit))
+        rerank_limit = len(fused) if max_chunks_per_paper is not None else 5
+        reranked = rerank(question, fused, chunks_by_id, top_k=rerank_limit)
         rankings = {
-            "Semantic only": paper_ids(semantic[:5]),
-            "Hybrid fusion": paper_ids(doc_id for doc_id, _ in fused[:5]),
-            "Hybrid + rerank": paper_ids(doc_id for doc_id, _ in reranked),
+            "Semantic only": top_paper_ids(semantic, max_chunks_per_paper),
+            "Hybrid fusion": top_paper_ids((doc_id for doc_id, _ in fused), max_chunks_per_paper),
+            "Hybrid + rerank": top_paper_ids((doc_id for doc_id, _ in reranked), max_chunks_per_paper),
         }
 
         hits = {
@@ -51,7 +63,7 @@ def evaluate(eval_path):
             for k, hit in scores.items():
                 counts[method][k] += hit
 
-        if not all(scores[1] and scores["full"] for scores in hits.values()):
+        if show_rankings or not all(scores[1] and scores["full"] for scores in hits.values()):
             print(f"\n{question}\n  Expected: {', '.join(sorted(expected))}")
             for method, ids in rankings.items():
                 print(f"  {method}: {', '.join(ids)}")
@@ -66,4 +78,12 @@ def evaluate(eval_path):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Compare three retrieval configurations.")
     parser.add_argument("--questions", type=Path, default=EVAL_PATH)
-    evaluate(parser.parse_args().questions)
+    parser.add_argument("--candidate-limit", type=int, default=10, help="Chunks per search method before fusion")
+    parser.add_argument("--max-chunks-per-paper", type=int, help="Limit results from each paper after ranking")
+    parser.add_argument("--show-rankings", action="store_true", help="Print ranked paper IDs for every question")
+    args = parser.parse_args()
+    if args.candidate_limit < 5:
+        parser.error("--candidate-limit must be at least 5")
+    if args.max_chunks_per_paper is not None and args.max_chunks_per_paper < 1:
+        parser.error("--max-chunks-per-paper must be positive")
+    evaluate(args.questions, args.candidate_limit, args.max_chunks_per_paper, args.show_rankings)

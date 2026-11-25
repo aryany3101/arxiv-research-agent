@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Explore saved, cited answers from the arXiv Research Agent and inspect a real retrieval miss.">
+  <title>arXiv Research Agent · Evidence Explorer</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="explorer.js" defer></script>
+</head>
+<body>
+  <header class="masthead">
+    <div class="wrap topbar">
+      <a class="brand" href="./"><span class="mark" aria-hidden="true">ar</span> arXiv Research Agent</a>
+      <nav aria-label="Main">
+        <a href="#examples">Examples</a>
+        <a href="#case-study">Case study</a>
+        <a href="https://github.com/aryany3101/arxiv-research-agent">GitHub</a>
+      </nav>
+    </div>
+  </header>
+  <main class="wrap">
+    <section class="hero" aria-labelledby="title">
+      <div>
+        <h1 id="title">Follow the<br><em>evidence.</em></h1>
+        <p>Explore saved answers from a research agent, open the papers it cited, and see what happens when it retrieves the wrong source.</p>
+        <a class="primary" href="#examples">Explore the answers</a>
+      </div>
+      <aside class="summary" aria-label="About the examples">
+        <p class="summary-title">No API key needed.</p>
+        <dl>
+          <div><dt>Saved answers</dt><dd>3</dd></div>
+          <div><dt>Retrieval case study</dt><dd>1</dd></div>
+        </dl>
+        <p>The examples show excerpts from saved runs.</p>
+      </aside>
+    </section>
+
+    <section class="section" id="examples" aria-labelledby="examples-heading">
+      <h2 id="examples-heading">Explore an example</h2>
+      <div class="workspace">
+        <nav class="questions" aria-label="Saved questions">
+          <a href="#world-models" data-example>Video world models</a>
+          <a href="#moral-concepts" data-example>Moral concepts in language models</a>
+          <a href="#clinical-models" data-example>Auditing clinical language models</a>
+          <a href="#retrieval-miss" data-example><span class="status-dot" aria-hidden="true"></span> ColBERTv2 retrieval miss</a>
+        </nav>
+        <div class="answers">
+          <article class="answer" id="world-models" tabindex="-1">
+            <p class="label">Saved answer</p>
+            <h3>How do video world models generalize across different robot embodiments?</h3>
+            <blockquote>By scaling data across heterogeneous human and robotic agents, the models learn generalizable physical priors.</blockquote>
+            <blockquote>To accommodate disparately-sized operational spaces across platforms, absolute end-effector actions are normalized into uniform, finite bounds […] using platform-unique normalization factors.</blockquote>
+            <div class="citation"><span>Source paper</span><a href="https://arxiv.org/abs/2608.27406v1">CLAP: Cross-Embodiment Video World Models are Zero-Shot Physical Simulators</a></div>
+          </article>
+          <article class="answer" id="moral-concepts" tabindex="-1">
+            <p class="label">Saved answer</p>
+            <h3>How do language models represent moral concepts internally?</h3>
+            <blockquote>Linear probes corresponding to different Moral Foundations Theory (MFT) categories […] define distinct directions that span 5 effective dimensions at every layer. However, they share a positive common component, exhibiting a mean pairwise cosine similarity of approximately 0.22–0.27 across layers.</blockquote>
+            <div class="citation"><span>Source paper</span><a href="https://arxiv.org/abs/2608.27402v1">How Language Models Organize and Structure Moral Knowledge</a></div>
+          </article>
+          <article class="answer" id="clinical-models" tabindex="-1">
+            <p class="label">Saved answer</p>
+            <h3>How can clinical language models be made more robust against dataset-specific shortcuts like templates and formatting artifacts?</h3>
+            <blockquote>It labels these SAE latents using an LLM-assisted interpretation pipeline paired with ICD-10 retrieval constraints.</blockquote>
+            <blockquote>It provides post-hoc per-concept attributions for auditing model predictions, ensuring a feature-level audit trail of the clinical concepts driving predictions and verifying the suppression of artifact concepts.</blockquote>
+            <div class="citation"><span>Source paper</span><a href="https://arxiv.org/abs/2608.27397v1">Making Clinical Language Models Auditable: Concept-Guided Fine-Tuning for Robust Prediction</a></div>
+          </article>
+          <article class="answer" id="retrieval-miss" tabindex="-1">
+            <p class="label miss">Retrieval miss</p>
+            <h3>Which follow-up to late-interaction passage search compresses document token embeddings with residual compression?</h3>
+            <p>All three original rankings returned five chunks from the original ColBERT paper. The expected source, ColBERTv2, was missing from all three top-five lists.</p>
+            <div class="citation"><span>Expected paper</span><a href="https://arxiv.org/abs/2112.10752v2">ColBERTv2: Effective and Efficient Retrieval via Lightweight Late Interaction</a></div>
+            <p><a href="#case-study">See the rankings and what changed</a></p>
+          </article>
+        </div>
+      </div>
+      <a class="text-link" href="https://github.com/aryany3101/arxiv-research-agent/blob/main/data/faithfulness_results.json">View the full saved runs on GitHub</a>
+    </section>
+
+    <section class="section study" id="case-study" aria-labelledby="study-heading">
+      <div class="study-heading">
+        <div>
+          <p class="label">Retrieval case study</p>
+          <h2 id="study-heading">Five chunks.<br>One wrong paper.</h2>
+        </div>
+        <p>ColBERTv2 introduced residual compression. The agent kept finding its predecessor. We tested whether capping repeated chunks and widening the candidate pool would surface the right paper.</p>
+      </div>
+      <div class="study-results">
+        <div class="table-scroll">
+          <table aria-label="ColBERTv2 retrieval experiment">
+            <thead><tr><th scope="col">Configuration</th><th scope="col">ColBERTv2 in first five?</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Original ranking</th><td>No · five ColBERT chunks</td></tr>
+              <tr><th scope="row">One chunk per paper</th><td>No · absent from candidates</td></tr>
+              <tr><th scope="row">One chunk per paper, 30 candidates per search</th><td>No · ranked 40th before the cap</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>The wider search brought ColBERTv2 in through BM25 at rank 21. It landed at rank 31 after fusion and rank 40 after reranking. The cap freed up slots, but the paper still ranked too low to fill one.</p>
+      </div>
+      <a class="text-link" href="https://github.com/aryany3101/arxiv-research-agent/blob/main/docs/colbertv2-case-study.md">Read the full rankings and reproduction steps</a>
+    </section>
+  </main>
+  <footer class="wrap footer">
+    <a href="https://github.com/aryany3101">Aryan Yadav</a>
+    <a href="https://github.com/aryany3101/arxiv-research-agent">Project source</a>
+  </footer>
+</body>
+</html>
